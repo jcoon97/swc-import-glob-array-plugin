@@ -1,0 +1,19 @@
+[package]
+name = "swc-plugin-import-glob-array"
+version = "1.0.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = "symbols"
+
+[dependencies]
+glob = "0.3.1"
+is-glob = "0.1.0"
+serde = "1"
+swc_core = { version = "0.75.*", features = ["ecma_plugin_transform", "testing"] }
