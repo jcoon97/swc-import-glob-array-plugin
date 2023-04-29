@@ -16,4 +16,4 @@ strip = "symbols"
 glob = "0.3.1"
 is-glob = "0.1.0"
 serde = "1"
-swc_core = { version = "0.75.*", features = ["ecma_plugin_transform", "testing"] }
+swc_core = { version = "0.74.*", features = ["ecma_plugin_transform", "testing"] }
