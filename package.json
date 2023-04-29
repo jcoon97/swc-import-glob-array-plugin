@@ -21,7 +21,8 @@
   ],
   "scripts": {
     "cargo:build": "cargo +nightly build-wasi --release",
-    "prepack": "npm run cargo:build && cp target/wasm32-wasi/release/swc_plugin_import_glob_array.wasm ."
+    "prepack": "npm run cargo:build && cp target/wasm32-wasi/release/swc_plugin_import_glob_array.wasm .",
+    "postpublish": "rm swc_plugin_import_glob_array.wasm"
   },
   "files": [
     "swc_plugin_import_glob_array.wasm"
