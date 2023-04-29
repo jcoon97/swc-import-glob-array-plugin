@@ -2,3 +2,4 @@
 /target
 ^target/
 target
+swc_plugin_import_glob_array.wasm

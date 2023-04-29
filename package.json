@@ -2,8 +2,16 @@
   "name": "swc-plugin-import-glob-array",
   "version": "1.0.0",
   "description": "SWC plugin that expands glob patterns and imports them as an array",
+  "main": "swc_plugin_import_glob_array.wasm",
   "author": "James Coon <james@jcoon.dev> (https://jcoon.dev)",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jcoon97/swc-plugin-import-glob-array"
+  },
+  "bugs": {
+    "url": "https://github.com/jcoon97/swc-plugin-import-glob-array/issues"
+  },
   "keywords": [
     "import",
     "glob",
@@ -11,12 +19,11 @@
     "swc",
     "swc-plugin"
   ],
-  "main": "target/wasm32-wasi/release/swc_plugin_import_glob_array.wasm",
   "scripts": {
-    "prepublishOnly": "cargo build-wasi --release"
+    "prepack": "cp target/wasm32-wasi/release/swc_plugin_import_glob_array.wasm ."
   },
   "files": [
-    "target/wasm32-wasi/release/swc_plugin_import_glob_array.wasm"
+    "swc_plugin_import_glob_array.wasm"
   ],
   "preferUnplugged": true
 }
