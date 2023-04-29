@@ -1,13 +1,12 @@
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;
-use std::str::FromStr;
 
 use is_glob::is_glob;
 use swc_core::ecma::ast::{Decl, ImportDecl, Module, ModuleDecl, ModuleItem, Stmt, VarDecl};
 use swc_core::ecma::visit::Fold;
 use swc_core::ecma::{ast::Program, visit::FoldWith};
-use swc_core::plugin::metadata::TransformPluginMetadataContextKind;
+use swc_core::plugin::metadata::TransformPluginMetadataContextKind::{Cwd, Filename};
 use swc_core::plugin::{plugin_transform, proxies::TransformPluginProgramMetadata};
 
 use crate::transformer::transform_import_decl;
@@ -31,10 +30,6 @@ struct ImportPaths {
 }
 
 impl ImportGlobArrayPlugin {
-    fn as_glob_path(&self, filename: &str) -> PathBuf {
-        self.cwd.join(&self.filename).with_file_name(filename)
-    }
-
     fn build_module_items(
         &self,
         tuple: Option<(Vec<ImportDecl>, Vec<VarDecl>, Vec<VarDecl>)>,
@@ -59,9 +54,9 @@ impl ImportGlobArrayPlugin {
     }
 
     fn get_paths(&self, path: &PathBuf) -> Option<ImportPaths> {
-        let current_dir = self.cwd.join(self.filename.parent().unwrap());
-        let relative_path = path.strip_prefix(&current_dir).ok()?.to_str()?.to_owned();
-        let absolute_path = current_dir.join(&relative_path).to_str()?.to_owned();
+        let path = self.cwd.join(path.strip_prefix("/cwd").ok()?);
+        let relative_path = path.strip_prefix(&self.cwd).ok()?.to_str()?.to_owned();
+        let absolute_path = self.cwd.join(&relative_path).to_str()?.to_owned();
         let imported_path = if relative_path.starts_with('.') {
             relative_path.to_owned()
         } else {
@@ -109,12 +104,15 @@ impl Fold for ImportGlobArrayPlugin {
 
 #[plugin_transform]
 pub fn process_transform(program: Program, metadata: TransformPluginProgramMetadata) -> Program {
-    let file_name = metadata
-        .get_context(&TransformPluginMetadataContextKind::Filename)
+    let cwd = metadata
+        .get_context(&Cwd)
+        .map(PathBuf::from)
+        .expect("Import Glob Array Plugin required cwd metadata");
+    let filename = metadata
+        .get_context(&Filename)
         .map(PathBuf::from)
         .expect("Import Glob Array Plugin requires filename metadata");
-    let cwd = PathBuf::from_str("/cwd").unwrap();
-    let mut plugin = ImportGlobArrayPlugin::new(cwd, file_name);
+    let mut plugin = ImportGlobArrayPlugin::new(cwd, filename);
     program.fold_with(&mut plugin)
 }
 

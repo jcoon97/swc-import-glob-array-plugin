@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
+use std::str::FromStr;
 
 use glob::glob;
 use swc_core::common::DUMMY_SP;
@@ -27,7 +29,10 @@ pub(crate) fn transform_import_decl(
     plugin: &ImportGlobArrayPlugin,
     decl: &ImportDecl,
 ) -> Option<(Vec<ImportDecl>, Vec<VarDecl>, Vec<VarDecl>)> {
-    let glob_path = plugin.as_glob_path(&decl.src.value.to_string());
+    let glob_path = PathBuf::from_str("/cwd")
+        .unwrap_or_default()
+        .join(&plugin.filename)
+        .with_file_name(&decl.src.value.to_string().trim_start_matches(&['.', '/']));
     let glob_path = glob_path.to_str()?;
 
     let mut name_placeholder_map: HashMap<Pat, Vec<Option<ExprOrSpread>>> = HashMap::new();
