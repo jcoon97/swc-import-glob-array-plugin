@@ -1,5 +1,5 @@
 [package]
-name = "swc-plugin-import-glob-array"
+name = "swc-import-glob-array-plugin"
 version = "1.0.0"
 edition = "2021"
 

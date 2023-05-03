@@ -1,4 +1,4 @@
-# SWC Plugin Import Glob Array
+# SWC Import Glob Array Plugin
 
 This plugin is a port of [babel-plugin-import-glob-array](https://github.com/jescalan/babel-plugin-import-glob-array)
 from JavaScript to Rust for [Speedy Web Compiler (SWC)](https://swc.rs/).
@@ -14,13 +14,13 @@ Installation can be done via npm:
 
 ```shell
 # npm
-$ npm install --save-dev swc-plugin-import-glob-array
+$ npm install --save-dev swc-import-glob-array-plugin
 
 # yarn
-$ yarn add -D swc-plugin-import-glob-array
+$ yarn add -D swc-import-glob-array-plugin
 
 # pnpm
-$ pnpm add -D swc-plugin-import-glob-array
+$ pnpm add -D swc-import-glob-array-plugin
 ```
 
 Then you'll add the plugin under `jsc.experimental.plugins`:
@@ -31,7 +31,7 @@ Then you'll add the plugin under `jsc.experimental.plugins`:
     "experimental": {
       "plugins": [
         [
-          "swc-plugin-import-glob-array",
+          "swc-import-glob-array-plugin",
           {}
         ]
       ]
@@ -105,6 +105,6 @@ const metadata = [
 
 ## Compatibility
 
-| swc-plugin-import-glob-array | @swc/core     | next   |
-|------------------------------|---------------|--------|
-| 1.0.0                        | 1.3.44-1.3.47 | 13.3.1 |
+| swc-import-glob-array-plugin | @swc/core     |
+|------------------------------|---------------|
+| 1.0.0                        | 1.3.44-1.3.47 |
