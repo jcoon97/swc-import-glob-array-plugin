@@ -3,3 +3,4 @@
 ^target/
 target
 swc_import_glob_array_plugin.wasm
+.DS_Store
