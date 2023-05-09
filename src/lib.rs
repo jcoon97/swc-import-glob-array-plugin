@@ -3,18 +3,18 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use is_glob::is_glob;
+use swc_core::ecma::{ast::Program, visit::FoldWith};
 use swc_core::ecma::ast::{Decl, ImportDecl, Module, ModuleDecl, ModuleItem, Stmt, VarDecl};
 use swc_core::ecma::visit::Fold;
-use swc_core::ecma::{ast::Program, visit::FoldWith};
-use swc_core::plugin::metadata::TransformPluginMetadataContextKind::{Cwd, Filename};
 use swc_core::plugin::{plugin_transform, proxies::TransformPluginProgramMetadata};
+use swc_core::plugin::metadata::TransformPluginMetadataContextKind::{Cwd, Filename};
 
 use crate::transformer::transform_import_decl;
 
 mod transformer;
 mod utils;
+mod imports;
 
-const IMPORT_META_NAME: &'static str = "_importMeta";
 
 #[derive(Debug)]
 struct ImportGlobArrayPlugin {
@@ -89,12 +89,12 @@ impl Fold for ImportGlobArrayPlugin {
             .into_iter()
             .flat_map(|item| match item {
                 ModuleItem::ModuleDecl(ModuleDecl::Import(import_decl))
-                    if (import_decl.src.value.starts_with('.')
-                        || import_decl.src.value.starts_with('/'))
-                        && is_glob(&import_decl.src.value.to_string()) =>
-                {
-                    self.build_module_items(transform_import_decl(&self, &import_decl))
-                }
+                if (import_decl.src.value.starts_with('.')
+                    || import_decl.src.value.starts_with('/'))
+                    && is_glob(&import_decl.src.value.to_string()) =>
+                    {
+                        self.build_module_items(transform_import_decl(&self, &import_decl))
+                    }
                 _ => vec![item],
             })
             .collect();
@@ -120,7 +120,7 @@ pub fn process_transform(program: Program, metadata: TransformPluginProgramMetad
 mod tests {
     use std::path::PathBuf;
 
-    use swc_core::ecma::transforms::testing::{test_fixture, FixtureTestConfig};
+    use swc_core::ecma::transforms::testing::{FixtureTestConfig, test_fixture};
     use swc_core::testing::fixture;
 
     use crate::ImportGlobArrayPlugin;
