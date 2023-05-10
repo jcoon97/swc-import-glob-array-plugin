@@ -2,10 +2,9 @@ use std::collections::HashMap;
 
 use swc_core::common::DUMMY_SP;
 use swc_core::ecma::ast::{
-    ArrayLit, Expr, ExprOrSpread, Ident, KeyValueProp, Lit,
-    ObjectLit, Pat, Prop, PropName, PropOrSpread, Str, VarDecl, VarDeclarator,
+    ArrayLit, Expr, ExprOrSpread, Ident, KeyValueProp, Lit, ObjectLit, Pat, Prop, PropName,
+    PropOrSpread, Str, VarDecl, VarDeclKind, VarDeclarator,
 };
-use swc_core::ecma::ast::VarDeclKind::Const;
 
 use crate::ImportPaths;
 
@@ -37,14 +36,12 @@ pub(crate) fn get_import_map_expr(import_paths: &ImportPaths) -> ExprOrSpread {
     }))
 }
 
-
 /// Transform a map of names and [ExprOrSpread](ExprOrSpread) elements to a vector
 /// (array) of [VarDecl](VarDecl)s.
 pub(crate) fn to_var_decls(map: HashMap<Pat, Vec<Option<ExprOrSpread>>>) -> Vec<VarDecl> {
     map.into_iter()
         .map(|item| {
-            let name = item.0;
-            let elems = item.1;
+            let (name, elems) = item;
 
             VarDecl {
                 declare: false,
@@ -57,7 +54,7 @@ pub(crate) fn to_var_decls(map: HashMap<Pat, Vec<Option<ExprOrSpread>>>) -> Vec<
                     name,
                     span: DUMMY_SP,
                 }],
-                kind: Const,
+                kind: VarDeclKind::Const,
                 span: DUMMY_SP,
             }
         })

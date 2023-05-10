@@ -2,20 +2,23 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use glob::{glob, glob_with, MatchOptions};
+use glob::glob;
 use swc_core::common::DUMMY_SP;
 use swc_core::ecma::ast::{
     BindingIdent, Expr, ExprOrSpread, Ident, ImportDecl, ImportDefaultSpecifier,
-    ImportNamedSpecifier, ImportSpecifier as SWCImportSpecifier, ImportStarAsSpecifier, Pat, Str, VarDecl,
+    ImportNamedSpecifier, ImportSpecifier as SWCImportSpecifier, ImportStarAsSpecifier, Pat, Str,
+    VarDecl,
 };
 
-use crate::ImportGlobArrayPlugin;
 use crate::imports::ImportSpecifier;
-use crate::utils::{
-    get_import_map_expr, to_var_decls,
-    upsert_map,
-};
+use crate::utils::{get_import_map_expr, to_var_decls, upsert_map};
+use crate::ImportGlobArrayPlugin;
 
+pub(crate) struct TransformedStatements {
+    pub(crate) imports: Vec<ImportDecl>,
+    pub(crate) meta: Vec<VarDecl>,
+    pub(crate) names: Vec<VarDecl>,
+}
 /// Expand the glob pattern embedded within an [ImportDecl](ImportDecl), and give back a tuple of three (3) values:
 ///
 /// * The first, a vector of [ImportDecl](ImportDecl), with each item as the expanded representation of the original
@@ -28,12 +31,13 @@ use crate::utils::{
 ///   contains an embedded object for the special `_importMeta` token. This vector may be empty.
 pub(crate) fn transform_import_decl(
     plugin: &ImportGlobArrayPlugin,
-    decl: &ImportDecl,
-) -> Option<(Vec<ImportDecl>, Vec<VarDecl>, Vec<VarDecl>)> {
+    import_src: Box<Str>,
+    import_specifiers: Vec<SWCImportSpecifier>,
+) -> Option<TransformedStatements> {
     let glob_path = PathBuf::from_str("/cwd")
         .unwrap_or_default()
         .join(&plugin.filename)
-        .with_file_name(&decl.src.value.to_string().trim_start_matches(&['.', '/']));
+        .with_file_name(import_src.value.to_string().trim_start_matches(&['.', '/']));
     let glob_path = glob_path.to_str()?;
 
     let mut name_placeholder_map: HashMap<Pat, Vec<Option<ExprOrSpread>>> = HashMap::new();
@@ -43,12 +47,10 @@ pub(crate) fn transform_import_decl(
     let import_statements: Vec<ImportDecl> = glob_pattern
         .map(|result| match result {
             Ok(file_path) => {
-                println!("File Path: {:?}", file_path);
                 let import_paths = plugin.get_paths(&file_path)?;
-                println!("Import Paths: {:?}", import_paths);
                 let specifiers: Vec<SWCImportSpecifier> =
-                    decl.specifiers.iter().fold(vec![], |mut acc, swc_specifier| {
-                        let specifier: ImportSpecifier = swc_specifier.to_owned().into();
+                    import_specifiers.iter().fold(vec![], |mut acc, specifier| {
+                        let specifier: ImportSpecifier = specifier.to_owned().into();
                         let name_ident = Pat::Ident(BindingIdent {
                             id: Ident::new(specifier.get_local_name().into(), DUMMY_SP),
                             type_ann: None,
@@ -99,8 +101,6 @@ pub(crate) fn transform_import_decl(
                         acc
                     });
 
-                println!("Specifiers: {:?}", specifiers);
-
                 Some(ImportDecl {
                     asserts: None,
                     span: DUMMY_SP,
@@ -119,14 +119,9 @@ pub(crate) fn transform_import_decl(
         .map(|i| i.unwrap())
         .collect();
 
-    println!("Import Statements: {:?}", import_statements);
-
-    let returning = (
-        import_statements,
-        to_var_decls(name_placeholder_map),
-        to_var_decls(import_meta_map),
-    );
-
-    println!("Returning: {:?}", returning);
-    Some(returning)
+    Some(TransformedStatements {
+        imports: import_statements,
+        meta: to_var_decls(import_meta_map),
+        names: to_var_decls(name_placeholder_map),
+    })
 }

@@ -9,7 +9,7 @@ impl ImportSpecifier {
         match &self.0 {
             SWCImportSpecifier::Default(default) => default.local.sym.to_string(),
             SWCImportSpecifier::Named(named) => named.local.sym.to_string(),
-            SWCImportSpecifier::Namespace(as_star) => as_star.local.sym.to_string()
+            SWCImportSpecifier::Namespace(as_star) => as_star.local.sym.to_string(),
         }
     }
 
@@ -19,7 +19,7 @@ impl ImportSpecifier {
 
         match export_name {
             ModuleExportName::Ident(ident) => Some(ident.sym.to_string() == IMPORT_META_NAME),
-            ModuleExportName::Str(str) => Some(str.value.to_string() == IMPORT_META_NAME)
+            ModuleExportName::Str(str) => Some(str.value.to_string() == IMPORT_META_NAME),
         }
     }
 

@@ -3,18 +3,17 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use is_glob::is_glob;
-use swc_core::ecma::{ast::Program, visit::FoldWith};
-use swc_core::ecma::ast::{Decl, ImportDecl, Module, ModuleDecl, ModuleItem, Stmt, VarDecl};
+use swc_core::ecma::ast::{Decl, ImportDecl, Module, ModuleDecl, ModuleItem, Stmt};
 use swc_core::ecma::visit::Fold;
-use swc_core::plugin::{plugin_transform, proxies::TransformPluginProgramMetadata};
+use swc_core::ecma::{ast::Program, visit::FoldWith};
 use swc_core::plugin::metadata::TransformPluginMetadataContextKind::{Cwd, Filename};
+use swc_core::plugin::{plugin_transform, proxies::TransformPluginProgramMetadata};
 
-use crate::transformer::transform_import_decl;
+use crate::transformer::{transform_import_decl, TransformedStatements};
 
+mod imports;
 mod transformer;
 mod utils;
-mod imports;
-
 
 #[derive(Debug)]
 struct ImportGlobArrayPlugin {
@@ -30,23 +29,25 @@ struct ImportPaths {
 }
 
 impl ImportGlobArrayPlugin {
-    fn build_module_items(
-        &self,
-        tuple: Option<(Vec<ImportDecl>, Vec<VarDecl>, Vec<VarDecl>)>,
-    ) -> Vec<ModuleItem> {
+    fn build_module_items(&self, transformed: Option<TransformedStatements>) -> Vec<ModuleItem> {
         let mut results: Vec<ModuleItem> = vec![];
 
-        if let Some(transformed) = tuple {
-            transformed
-                .0
+        if let Some(transformed) = transformed {
+            let TransformedStatements {
+                imports,
+                names,
+                meta,
+            } = transformed;
+
+            imports
                 .into_iter()
                 .for_each(|item| results.push(ModuleItem::ModuleDecl(ModuleDecl::Import(item))));
 
-            transformed.1.into_iter().for_each(|item| {
+            names.into_iter().for_each(|item| {
                 results.push(ModuleItem::Stmt(Stmt::Decl(Decl::Var(Box::new(item)))))
             });
 
-            transformed.2.into_iter().for_each(|item| {
+            meta.into_iter().for_each(|item| {
                 results.push(ModuleItem::Stmt(Stmt::Decl(Decl::Var(Box::new(item)))))
             });
         }
@@ -54,7 +55,11 @@ impl ImportGlobArrayPlugin {
     }
 
     fn get_paths(&self, path: &PathBuf) -> Option<ImportPaths> {
-        let path = self.cwd.join(path.strip_prefix("/cwd").ok()?);
+        let path = self.cwd.join(if path.starts_with("/cwd") {
+            path.strip_prefix("/cwd").ok()?
+        } else {
+            path
+        });
         let relative_path = path.strip_prefix(&self.cwd).ok()?.to_str()?.to_owned();
         let absolute_path = self.cwd.join(&relative_path).to_str()?.to_owned();
         let imported_path = if relative_path.starts_with('.') {
@@ -88,13 +93,13 @@ impl Fold for ImportGlobArrayPlugin {
             .body
             .into_iter()
             .flat_map(|item| match item {
-                ModuleItem::ModuleDecl(ModuleDecl::Import(import_decl))
-                if (import_decl.src.value.starts_with('.')
-                    || import_decl.src.value.starts_with('/'))
-                    && is_glob(&import_decl.src.value.to_string()) =>
-                    {
-                        self.build_module_items(transform_import_decl(&self, &import_decl))
-                    }
+                ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
+                    src, specifiers, ..
+                })) if (src.value.starts_with('.') || src.value.starts_with('/'))
+                    && is_glob(&src.value.to_string()) =>
+                {
+                    self.build_module_items(transform_import_decl(&self, src, specifiers))
+                }
                 _ => vec![item],
             })
             .collect();
@@ -120,7 +125,7 @@ pub fn process_transform(program: Program, metadata: TransformPluginProgramMetad
 mod tests {
     use std::path::PathBuf;
 
-    use swc_core::ecma::transforms::testing::{FixtureTestConfig, test_fixture};
+    use swc_core::ecma::transforms::testing::{test_fixture, FixtureTestConfig};
     use swc_core::testing::fixture;
 
     use crate::ImportGlobArrayPlugin;
