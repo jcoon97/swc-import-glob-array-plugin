@@ -6,7 +6,7 @@ license = "MIT"
 name = "swc-import-glob-array-plugin"
 publish = false
 repository = "https://github.com/jcoon97/swc-import-glob-array-plugin"
-version = "1.0.1"
+version = "1.0.2"
 
 [lib]
 crate-type = ["cdylib"]

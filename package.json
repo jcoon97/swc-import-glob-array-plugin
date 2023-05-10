@@ -1,6 +1,6 @@
 {
   "name": "swc-import-glob-array-plugin",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "SWC plugin that expands glob patterns and imports them as an array",
   "main": "swc_import_glob_array_plugin.wasm",
   "author": "James Coon <james@jcoon.dev> (https://jcoon.dev)",
