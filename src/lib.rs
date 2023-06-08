@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use is_glob::is_glob;
+use pathdiff::diff_paths;
 use swc_core::ecma::ast::{Decl, ImportDecl, Module, ModuleDecl, ModuleItem, Stmt};
 use swc_core::ecma::visit::Fold;
 use swc_core::ecma::{ast::Program, visit::FoldWith};
@@ -55,13 +56,10 @@ impl ImportGlobArrayPlugin {
     }
 
     fn get_paths(&self, path: &PathBuf) -> Option<ImportPaths> {
-        let path = self.cwd.join(if path.starts_with("/cwd") {
-            path.strip_prefix("/cwd").ok()?
-        } else {
-            path
-        });
-        let relative_path = path.strip_prefix(&self.cwd).ok()?.to_str()?.to_owned();
-        let absolute_path = self.cwd.join(&relative_path).to_str()?.to_owned();
+        let current_path = path.strip_prefix("/cwd").ok()?;
+        let absolute_path = self.cwd.join(current_path).to_str()?.to_owned();
+        let relative_path = diff_paths(&absolute_path, &self.filename.parent()?)?;
+        let relative_path = relative_path.to_str()?;
         let imported_path = if relative_path.starts_with('.') {
             relative_path.to_owned()
         } else {
@@ -117,8 +115,13 @@ pub fn process_transform(program: Program, metadata: TransformPluginProgramMetad
         .get_context(&Filename)
         .map(PathBuf::from)
         .expect("Import Glob Array Plugin requires filename metadata");
-    let mut plugin = ImportGlobArrayPlugin::new(cwd, filename);
-    program.fold_with(&mut plugin)
+    return if filename.is_absolute() {
+        let mut plugin = ImportGlobArrayPlugin::new(cwd, filename);
+        program.fold_with(&mut plugin)
+    } else {
+        println!("Import Glob Array Plugin must execute with an absolute filename");
+        program
+    };
 }
 
 #[cfg(test)]
