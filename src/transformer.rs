@@ -120,7 +120,6 @@ pub(crate) fn transform_import_decl(
                     });
 
                 Some(ImportDecl {
-                    asserts: None,
                     span: DUMMY_SP,
                     specifiers,
                     src: Box::new(Str {
@@ -129,6 +128,7 @@ pub(crate) fn transform_import_decl(
                         value: import_paths.imported_path.into(),
                     }),
                     type_only: false,
+                    with: None
                 })
             }
             Err(_) => None,

@@ -16,4 +16,4 @@ globwalk = "0.8.1"
 is-glob = "0.1.0"
 path-clean = "1.0.1"
 pathdiff = "0.2.1"
-swc_core = { version = "0.76.*", features = ["ecma_ast", "ecma_visit", "ecma_plugin_transform", "testing"] }
+swc_core = { version = "0.82.*", features = ["ecma_ast", "ecma_visit", "ecma_plugin_transform", "testing"] }
